@@ -104,7 +104,7 @@
 ;;      * Add new option `aweshell-autosuggest-backend' to swtich between fish-style and company-style.
 ;;
 ;; 2018/11/12
-;;      * Remove Mac color, use hex color instead.
+;;	* Remove Mac color, use hex color instead.
 ;;
 ;; 2018/10/19
 ;;      * Alert user when background process finished or aborted.
@@ -213,13 +213,6 @@
 (defcustom aweshell-invalid-command-color "#FF0000"
   "The color of invalid command by `aweshell-validate-command'."
   :type 'string
-  :group 'aweshell)
-
-(defcustom aweshell-autosuggest-frontend 'company
-  "Front end to show fish-like auto suggestions (based on history)
-By default it is 'company, that prevents you from using company-mode for completion.
-If that bothers you, use 'custom as the front end."
-  :type 'symbol
   :group 'aweshell)
 
 (defface aweshell-alert-buffer-face
@@ -415,15 +408,10 @@ Create new one if no eshell buffer exists."
 ;; esh-autosuggest
 ;; Fish-like history autosuggestions in eshell
 (require 'esh-autosuggest)
-(cond ((eq aweshell-autosuggest-frontend 'company)
-       (add-hook 'eshell-mode-hook
-                 (lambda ()
-                   (esh-autosuggest-mode)
-                   (define-key eshell-mode-map (kbd aweshell-complete-selection-key) 'company-complete-selection))))
-      ((string-equal aweshell-autosuggest-frontend 'custom)
-       (add-hook 'eshell-mode-hook
-                 (lambda ()
-                   (esh-autosuggest-companyless-mode)))))
+(add-hook 'eshell-mode-hook
+          (lambda ()
+            (esh-autosuggest-mode)
+            (define-key eshell-mode-map (kbd aweshell-complete-selection-key) 'company-complete-selection)))
 
 ;; Validate command before post to eshell.
 (defun aweshell-validate-command ()
