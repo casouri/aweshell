@@ -222,7 +222,7 @@ history autosuggestions."
   (when esh-autosuggest--companyless-overlay
     (delete-overlay esh-autosuggest--companyless-overlay)
     (setq esh-autosuggest--companyless-overlay nil))
-  (define-key esh-autosuggest-companyless-mode-map (kdb aweshell-complete-selection-key) nil))
+  (define-key esh-autosuggest-companyless-mode-map (kbd aweshell-complete-selection-key) nil))
 
 (defun esh-autosuggest--companyless-post-command-hook ()
   "Add autosuggest to overlay."
@@ -246,7 +246,7 @@ history autosuggestions."
                      ;; without 'cursor property, the cursor is displayed at the end of
                      ;; the overlay
                      'cursor 0 'face 'esh-autosuggest-companyless)))
-      (define-key esh-autosuggest-companyless-mode-map (kdb aweshell-complete-selection-key) #'esh-autosuggest-complete-word))))
+      (define-key esh-autosuggest-companyless-mode-map (kbd aweshell-complete-selection-key) #'esh-autosuggest-complete-word))))
 
 (defun esh-autosuggest-companyless-mode-off-hook (&rest _)
   "Turn off, used in company hooks."
