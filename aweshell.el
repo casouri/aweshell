@@ -423,8 +423,7 @@ Create new one if no eshell buffer exists."
       ((string-equal aweshell-autosuggest-frontend 'custom)
        (add-hook 'eshell-mode-hook
                  (lambda ()
-                   (esh-autosuggest-companyless-mode)
-                   (define-key esh-autosuggest-companyless-mode-map (kbd aweshell-complete-selection-key) 'esh-autosuggest--companyless-complete)))))
+                   (esh-autosuggest-companyless-mode)))))
 
 ;; Validate command before post to eshell.
 (defun aweshell-validate-command ()
