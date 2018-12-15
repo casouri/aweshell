@@ -408,10 +408,6 @@ Create new one if no eshell buffer exists."
 ;; esh-autosuggest
 ;; Fish-like history autosuggestions in eshell
 (require 'esh-autosuggest)
-(add-hook 'eshell-mode-hook
-          (lambda ()
-            (esh-autosuggest-mode)
-            (define-key eshell-mode-map (kbd aweshell-complete-selection-key) 'company-complete-selection)))
 
 ;; Validate command before post to eshell.
 (defun aweshell-validate-command ()
