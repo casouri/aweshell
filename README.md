@@ -61,7 +61,6 @@ M-x customize-group RET aweshell RET
 | ```aweshell-clear-buffer-key```         | Key used to clear buffer (like <kbd>C-l</kbd> in traditional terminal) |
 | ```aweshell-sudo-toggle-key```          | Key used to toggle sudo                                                |
 | ```aweshell-use-exec-path-from-shell``` | Whether to use exec-path-from-shell to setup environment               |
-| ```aweshell-autosuggest-frontend```     | Front end for displaying autosuggest                                   |
 
 ## Customize shell prompt
 
@@ -78,19 +77,14 @@ Consult [eshell-prompt-extra's README](https://github.com/kaihaosw/eshell-prompt
 Checkout [homepage of eshell-up](https://github.com/peterwvj/eshell-up) for more information.
 
 
-## More on autosuggest front end
-
-By default, company is used for fish-like auto suggestion,
-if you want to use company for completion,
-change ```aweshell-autosuggest-frontend``` from ```'company``` to ```'custom```.
-
-<img src="./company-style-completion.png">
-
+## Use company as completion tool
 I advie to disable company's auto completion in shell, because it could become annoying. Sugguested config:
 ```Elisp
 (add-hook
    'eshell-mode-hook
    (lambda ()
+     (company-mode)
+     (define-key eshll-mode-map (kbd "<tab>") #'company-complete)
      (setq-local company-idle-delay 9999)))
 ```
 
