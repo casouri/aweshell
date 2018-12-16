@@ -1,10 +1,12 @@
+Note from casouri: This fork (master branch) is not going to follow Andy's master branch anymore. For the latest version please visit his page.
+
 # What is aweshell?
 
-I created `multi-term.el` and use it many years.
+Andy created `multi-term.el` and use it many years.
 
-Now I'm a big fans of `eshell`.
+Now he is a big fans of `eshell`.
 
-So I wrote `aweshell.el` to extend `eshell` with these features:
+So he wrote `aweshell.el` to extend `eshell` with these features:
 
 1. Create and manage multiple eshell buffers.
 2. Add some useful commands, such as: clear buffer, toggle sudo etc.
@@ -27,7 +29,7 @@ So I wrote `aweshell.el` to extend `eshell` with these features:
 Put `aweshell.el`, `esh-autosuggest.el`, `eshell-prompt-extras.el`, `exec-path-from-shell.el` to your load-path.
 The load-path is usually ~/elisp/.
 It's set in your ~/.emacs like this:
-```Elisp
+```emacs-lisp
 (add-to-list 'load-path (expand-file-name "~/elisp"))
 (require 'aweshell)
 ```
@@ -36,14 +38,14 @@ Bind your favorite key to functions:
 
 # Usage
 
-| Commands                    | Description                                                   |
-|-----------------------------|---------------------------------------------------------------|
-| ```aweshell-new```          | create a new eshell buffer                                    |
-| ```aweshell-next```         | switch to next aweshell buffer                                |
-| ```aweshell-prev```         | switch to previous aweshell buffer                            |
-| ```aweshell-clear-buffer``` | clear eshell buffer                                           |
-| ```aweshell-sudo-toggle```  | toggle sudo                                                   |
-| ```aweshell-toggle```       | switch back and forth between eshell buffer and normal buffer |
+| Commands                | Description                                                   |
+|-------------------------|---------------------------------------------------------------|
+| `aweshell-new`          | create a new eshell buffer                                    |
+| `aweshell-next`         | switch to next aweshell buffer                                |
+| `aweshell-prev`         | switch to previous aweshell buffer                            |
+| `aweshell-clear-buffer` | clear eshell buffer                                           |
+| `aweshell-sudo-toggle`  | toggle sudo                                                   |
+| `aweshell-toggle`       | switch back and forth between eshell buffer and normal buffer |
 
 
 # Customize
@@ -51,16 +53,16 @@ Bind your favorite key to functions:
 ## Variables
 
 Customize variables  by:
-```Elisp
+```emacs-lisp
 M-x customize-group RET aweshell RET
 ```
 
-| Variable                                | Description                                                            |
-|-----------------------------------------|------------------------------------------------------------------------|
-| ```aweshell-complete-selection-key```   | Key used for complete selected candidate                               |
-| ```aweshell-clear-buffer-key```         | Key used to clear buffer (like <kbd>C-l</kbd> in traditional terminal) |
-| ```aweshell-sudo-toggle-key```          | Key used to toggle sudo                                                |
-| ```aweshell-use-exec-path-from-shell``` | Whether to use exec-path-from-shell to setup environment               |
+| Variable                            | Description                                                            |
+|-------------------------------------|------------------------------------------------------------------------|
+| `aweshell-complete-selection-key`   | Key used for complete selected candidate                               |
+| `aweshell-clear-buffer-key`         | Key used to clear buffer (like <kbd>C-l</kbd> in traditional terminal) |
+| `aweshell-sudo-toggle-key`          | Key used to toggle sudo                                                |
+| `aweshell-use-exec-path-from-shell` | Whether to use exec-path-from-shell to setup environment               |
 
 ## Customize shell prompt
 
@@ -69,7 +71,7 @@ Consult [eshell-prompt-extra's README](https://github.com/kaihaosw/eshell-prompt
 
 ## Customize eshell-up
 
-```Elisp
+```emacs-lisp
 (setq eshell-up-ignore-case nil)
 (setq eshell-up-print-parent-dir t)
 ```
@@ -79,7 +81,7 @@ Checkout [homepage of eshell-up](https://github.com/peterwvj/eshell-up) for more
 
 ## Use company as completion tool
 I advie to disable company's auto completion in shell, because it could become annoying. Sugguested config:
-```Elisp
+```emacs-lisp
 (add-hook
    'eshell-mode-hook
    (lambda ()
