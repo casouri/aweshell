@@ -201,6 +201,9 @@
   "Alert command face."
   :group 'aweshell)
 
+(defvar aweshell-eof-before-return t
+  "If set to t, go to end of buffer before hitting return.")
+
 (define-minor-mode aweshell-mode
   "Aweshell."
   :lighter ""
@@ -222,8 +225,8 @@
           (setq-local company-idle-delay 99999999))
         (esh-autosuggest-companyless-mode)
         (eshell-did-you-mean-setup)
-        (fish-completion-mode))
-    ))
+        (fish-completion-mode)
+        (advice-add #'eshell-send-input :before #'aweshell-eof-before-ret))))
 
 
 ;;;; Commands
@@ -502,6 +505,13 @@ Create new one if no eshell buffer exists."
       (message "%s %s"
                (propertize (format "[Aweshell Alert] %s" (string-remove-prefix "Aweshell: " (buffer-name buffer))) 'face 'aweshell-alert-buffer-face)
                (propertize msg 'face 'aweshell-alert-command-face)))))
+
+;;;;; (Maybe) goto eof before return
+
+(defun aweshell-eof-before-ret (&rest _)
+  "Goto eof before ret."
+  (when aweshell-eof-before-return
+    (goto-char (point-max))))
 
 (provide 'aweshell)
 

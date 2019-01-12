@@ -322,6 +322,10 @@ length of PATH (sans directory slashes) down to MAX-LEN."
 (defun epe-git-diverged-p ()
   (epe-git-p-helper (concat epe-git-status " | grep '^## .*deverged'")))
 
+(defun epe-make-read-only (str)
+  "Make STR read only."
+  (propertize str 'read-only t))
+
 
 ;;; Themes
 ;; Please post your theme here if you want.
@@ -330,57 +334,7 @@ length of PATH (sans directory slashes) down to MAX-LEN."
   "A eshell-prompt lambda theme."
   (setq eshell-prompt-regexp "^[^#\nλ]*[#λ] ")
   (concat
-   (when (epe-remote-p)
-     (epe-colorize-with-face
-      (concat (epe-remote-user) "@" (epe-remote-host) " ")
-      'epe-remote-face))
-   (when (and epe-show-python-info (bound-and-true-p venv-current-name))
-     (epe-colorize-with-face (concat "(" venv-current-name ") ") 'epe-venv-face))
-   (let ((f (cond ((eq epe-path-style 'fish) 'epe-fish-path)
-                  ((eq epe-path-style 'single) 'epe-abbrev-dir-name)
-                  ((eq epe-path-style 'full) 'abbreviate-file-name))))
-     (epe-colorize-with-face (funcall f (eshell/pwd)) 'epe-dir-face))
-   (when (epe-git-p)
-     (concat
-      (epe-colorize-with-face ":" 'epe-dir-face)
-      (epe-colorize-with-face
-       (concat (epe-git-branch)
-               (epe-git-dirty)
-               (epe-git-untracked)
-               (let ((unpushed (epe-git-unpushed-number)))
-                 (unless (= unpushed 0)
-                   (concat ":" (number-to-string unpushed)))))
-       'epe-git-face)))
-   (epe-colorize-with-face " λ" 'epe-symbol-face)
-   (epe-colorize-with-face (if (= (user-uid) 0) "#" "") 'epe-sudo-symbol-face)
-   " "))
-
-(defun epe-theme-dakrone ()
-  "A eshell-prompt lambda theme with directory shrinking."
-  (setq eshell-prompt-regexp "^[^#\nλ]* λ[#]* ")
-  (let* ((pwd-repl-home (lambda (pwd)
-                          (let* ((home (expand-file-name (getenv "HOME")))
-                                 (home-len (length home)))
-                            (if (and
-                                 (>= (length pwd) home-len)
-                                 (equal home (substring pwd 0 home-len)))
-                                (concat "~" (substring pwd home-len))
-                              pwd))))
-         (shrink-paths (lambda (p-lst)
-                         (if (> (length p-lst) 3) ;; shrink paths deeper than 3 dirs
-                             (concat
-                              (mapconcat (lambda (elm)
-                                           (if (zerop (length elm)) ""
-                                             (substring elm 0 1)))
-                                         (butlast p-lst 3)
-                                         "/")
-                              "/"
-                              (mapconcat (lambda (elm) elm)
-                                         (last p-lst 3)
-                                         "/"))
-                           (mapconcat (lambda (elm) elm)
-                                      p-lst
-                                      "/")))))
+   (epe-make-read-only
     (concat
      (when (epe-remote-p)
        (epe-colorize-with-face
@@ -388,11 +342,10 @@ length of PATH (sans directory slashes) down to MAX-LEN."
         'epe-remote-face))
      (when (and epe-show-python-info (bound-and-true-p venv-current-name))
        (epe-colorize-with-face (concat "(" venv-current-name ") ") 'epe-venv-face))
-     (epe-colorize-with-face (funcall
-                              shrink-paths
-                              (split-string
-                               (funcall pwd-repl-home (eshell/pwd)) "/"))
-                             'epe-dir-face)
+     (let ((f (cond ((eq epe-path-style 'fish) 'epe-fish-path)
+                    ((eq epe-path-style 'single) 'epe-abbrev-dir-name)
+                    ((eq epe-path-style 'full) 'abbreviate-file-name))))
+       (epe-colorize-with-face (funcall f (eshell/pwd)) 'epe-dir-face))
      (when (epe-git-p)
        (concat
         (epe-colorize-with-face ":" 'epe-dir-face)
@@ -400,56 +353,114 @@ length of PATH (sans directory slashes) down to MAX-LEN."
          (concat (epe-git-branch)
                  (epe-git-dirty)
                  (epe-git-untracked)
-                 (unless (= (epe-git-unpushed-number) 0)
-                   (concat ":" (number-to-string (epe-git-unpushed-number)))))
+                 (let ((unpushed (epe-git-unpushed-number)))
+                   (unless (= unpushed 0)
+                     (concat ":" (number-to-string unpushed)))))
          'epe-git-face)))
      (epe-colorize-with-face " λ" 'epe-symbol-face)
-     (epe-colorize-with-face (if (= (user-uid) 0) "#" "") 'epe-sudo-symbol-face)
-     " ")))
+     (epe-colorize-with-face (if (= (user-uid) 0) "#" "") 'epe-sudo-symbol-face)))
+   " "))
+
+(defun epe-theme-dakrone ()
+  "A eshell-prompt lambda theme with directory shrinking."
+  (setq eshell-prompt-regexp "^[^#\nλ]* λ[#]* ")
+  (concat
+   (epe-make-read-only
+    (let* ((pwd-repl-home (lambda (pwd)
+                            (let* ((home (expand-file-name (getenv "HOME")))
+                                   (home-len (length home)))
+                              (if (and
+                                   (>= (length pwd) home-len)
+                                   (equal home (substring pwd 0 home-len)))
+                                  (concat "~" (substring pwd home-len))
+                                pwd))))
+           (shrink-paths (lambda (p-lst)
+                           (if (> (length p-lst) 3) ;; shrink paths deeper than 3 dirs
+                               (concat
+                                (mapconcat (lambda (elm)
+                                             (if (zerop (length elm)) ""
+                                               (substring elm 0 1)))
+                                           (butlast p-lst 3)
+                                           "/")
+                                "/"
+                                (mapconcat (lambda (elm) elm)
+                                           (last p-lst 3)
+                                           "/"))
+                             (mapconcat (lambda (elm) elm)
+                                        p-lst
+                                        "/")))))
+      (concat
+       (when (epe-remote-p)
+         (epe-colorize-with-face
+          (concat (epe-remote-user) "@" (epe-remote-host) " ")
+          'epe-remote-face))
+       (when (and epe-show-python-info (bound-and-true-p venv-current-name))
+         (epe-colorize-with-face (concat "(" venv-current-name ") ") 'epe-venv-face))
+       (epe-colorize-with-face (funcall
+                                shrink-paths
+                                (split-string
+                                 (funcall pwd-repl-home (eshell/pwd)) "/"))
+                               'epe-dir-face)
+       (when (epe-git-p)
+         (concat
+          (epe-colorize-with-face ":" 'epe-dir-face)
+          (epe-colorize-with-face
+           (concat (epe-git-branch)
+                   (epe-git-dirty)
+                   (epe-git-untracked)
+                   (unless (= (epe-git-unpushed-number) 0)
+                     (concat ":" (number-to-string (epe-git-unpushed-number)))))
+           'epe-git-face)))
+       (epe-colorize-with-face " λ" 'epe-symbol-face)
+       (epe-colorize-with-face (if (= (user-uid) 0) "#" "") 'epe-sudo-symbol-face))))
+   " "))
 
 (defun epe-theme-pipeline ()
   "A eshell-prompt theme with full path, smiliar to oh-my-zsh theme."
   (setq eshell-prompt-regexp "^[^#\nλ]* λ[#]* ")
   (concat
-   (if (epe-remote-p)
+   (epe-make-read-only
+    (concat
+     (if (epe-remote-p)
+         (progn
+           (concat
+            (epe-colorize-with-face "┌─[" 'epe-pipeline-delimiter-face)
+            (epe-colorize-with-face (epe-remote-user) 'epe-pipeline-user-face)
+            (epe-colorize-with-face "@" 'epe-pipeline-delimiter-face)
+            (epe-colorize-with-face (epe-remote-host) 'epe-pipeline-host-face))
+           )
        (progn
          (concat
           (epe-colorize-with-face "┌─[" 'epe-pipeline-delimiter-face)
-          (epe-colorize-with-face (epe-remote-user) 'epe-pipeline-user-face)
+          (epe-colorize-with-face (user-login-name) 'epe-pipeline-user-face)
           (epe-colorize-with-face "@" 'epe-pipeline-delimiter-face)
-          (epe-colorize-with-face (epe-remote-host) 'epe-pipeline-host-face))
-         )
-     (progn
-       (concat
-        (epe-colorize-with-face "┌─[" 'epe-pipeline-delimiter-face)
-        (epe-colorize-with-face (user-login-name) 'epe-pipeline-user-face)
-        (epe-colorize-with-face "@" 'epe-pipeline-delimiter-face)
-        (epe-colorize-with-face (system-name) 'epe-pipeline-host-face)))
-     )
-   (concat
-    (epe-colorize-with-face "]──[" 'epe-pipeline-delimiter-face)
-    (epe-colorize-with-face (format-time-string "%H:%M" (current-time)) 'epe-pipeline-time-face)
-    (epe-colorize-with-face "]──[" 'epe-pipeline-delimiter-face)
-    (epe-colorize-with-face (concat (eshell/pwd)) 'epe-dir-face)
-    (epe-colorize-with-face  "]\n" 'epe-pipeline-delimiter-face)
-    (epe-colorize-with-face "└─>" 'epe-pipeline-delimiter-face)
-    )
-   (when (and epe-show-python-info (bound-and-true-p venv-current-name))
-     (epe-colorize-with-face (concat "(" venv-current-name ") ") 'epe-venv-face))
-   (when (epe-git-p)
+          (epe-colorize-with-face (system-name) 'epe-pipeline-host-face)))
+       )
      (concat
-      (epe-colorize-with-face ":" 'epe-dir-face)
-      (epe-colorize-with-face
-       (concat (epe-git-branch)
-               (epe-git-dirty)
-               (epe-git-untracked)
-               (let ((unpushed (epe-git-unpushed-number)))
-                 (unless (= unpushed 0)
-                   (concat ":" (number-to-string unpushed)))))
-       'epe-git-face)))
-   (epe-colorize-with-face " λ" 'epe-symbol-face)
-   (epe-colorize-with-face (if (= (user-uid) 0) "#" "") 'epe-sudo-symbol-face)
+      (epe-colorize-with-face "]──[" 'epe-pipeline-delimiter-face)
+      (epe-colorize-with-face (format-time-string "%H:%M" (current-time)) 'epe-pipeline-time-face)
+      (epe-colorize-with-face "]──[" 'epe-pipeline-delimiter-face)
+      (epe-colorize-with-face (concat (eshell/pwd)) 'epe-dir-face)
+      (epe-colorize-with-face  "]\n" 'epe-pipeline-delimiter-face)
+      (epe-colorize-with-face "└─>" 'epe-pipeline-delimiter-face)
+      )
+     (when (and epe-show-python-info (bound-and-true-p venv-current-name))
+       (epe-colorize-with-face (concat "(" venv-current-name ") ") 'epe-venv-face))
+     (when (epe-git-p)
+       (concat
+        (epe-colorize-with-face ":" 'epe-dir-face)
+        (epe-colorize-with-face
+         (concat (epe-git-branch)
+                 (epe-git-dirty)
+                 (epe-git-untracked)
+                 (let ((unpushed (epe-git-unpushed-number)))
+                   (unless (= unpushed 0)
+                     (concat ":" (number-to-string unpushed)))))
+         'epe-git-face)))
+     (epe-colorize-with-face " λ" 'epe-symbol-face)
+     (epe-colorize-with-face (if (= (user-uid) 0) "#" "") 'epe-sudo-symbol-face)))
    " "))
+
 (provide 'eshell-prompt-extras)
 
 ;;; eshell-prompt-extras.el ends here
