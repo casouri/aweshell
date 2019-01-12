@@ -3,13 +3,11 @@
 ;; Filename: aweshell.el
 ;; Description: Awesome eshell
 ;; Author: Andy Stewart <lazycat.manatee@gmail.com>
-;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
+;; Maintainer: Yuan Fu <casouri@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-08-13 23:18:35
-;; Version: 2.7
-;; Last-Updated: 2018-12-14 20:11:00
-;;           By: Andy Stewart
-;; URL: http://www.emacswiki.org/emacs/download/aweshell.el
+;; Version: 2.8
+;; URL: https://github.com/casouri/aweshell
 ;; Keywords:
 ;; Compatibility: GNU Emacs 27.0.50
 ;;
@@ -39,10 +37,10 @@
 
 ;;; Commentary:
 ;;
-;; I created `multi-term.el' and use it many years.
-;; Now I'm a big fans of `eshell'.
+;; Andy created `multi-term.el' and use it many years.
+;; Now he is a big fans of `eshell'.
 ;;
-;; So i write `aweshell.el' to extension `eshell' with below features:
+;; So he write `aweshell.el' to extension `eshell' with below features:
 ;; 1. Create and manage multiple eshell buffers.
 ;; 2. Add some useful commands, such as: clear buffer, toggle sudo etc.
 ;; 3. Display extra information and color like zsh, powered by `eshell-prompt-extras'
@@ -97,6 +95,9 @@
 
 ;;; Change log:
 ;;;
+;; 2019/01/11
+;;      * Remove key variables, instead use `aweshell-mode-map'
+;;      * Replace color variables with faces
 ;; 2018/12/14
 ;;      * Change option `aweshell-autosuggest-backend' to `aweshell-autosuggest-frontend' for clarity.
 ;;
@@ -159,132 +160,79 @@
 ;; casouri: copy `aweshell-validate-command' and `aweshell-sync-dir-buffer-name'
 ;;
 
-;;; TODO
-;;
-;;
-;;
-
 ;;; Require
+
 (require 'eshell)
-(require 'cl)
+(require 'cl-lib)
 (require 'subr-x)
+(require 'seq)
+
+(require 'eshell-up)
+(require 'eshell-prompt-extras)
+(require 'esh-autosuggest)
+(require 'eshell-did-you-mean)
+
 
 ;;; Code:
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; OS Config ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defvar aweshell-use-exec-path-from-shell t)
+;;;; Customize
 
-(when (and aweshell-use-exec-path-from-shell
-           (featurep 'cocoa))
-  ;; Initialize environment from user's shell to make eshell know every PATH by other shell.
-  (require 'exec-path-from-shell)
-  (exec-path-from-shell-initialize))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Customize ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defgroup aweshell nil
   "Multi eshell manager."
   :group 'aweshell)
 
-(defcustom aweshell-complete-selection-key "M-h"
-  "The keystroke for complete history auto-suggestions."
-  :type 'string
-  :group 'aweshell)
+(defface aweshell-valid-command-face
+  '((((background dark)) (:foreground "green"))
+    (((background light)) (:foreground "DarkGreen")))
+  "Face of a valid command in `aweshell-mode.'")
 
-(defcustom aweshell-clear-buffer-key "C-l"
-  "The keystroke for clear buffer."
-  :type 'string
-  :group 'aweshell)
-
-(defcustom aweshell-sudo-toggle-key "C-S-l"
-  "The keystroke for toggle sudo"
-  :type 'string
-  :group 'aweshell)
-
-(defcustom aweshell-search-history-key "M-'"
-  "The keystroke for search history"
-  :type 'string
-  :group 'aweshell)
-
-(defcustom aweshell-valid-command-color "#98C379"
-  "The color of valid command by `aweshell-validate-command'."
-  :type 'string
-  :group 'aweshell)
-
-(defcustom aweshell-invalid-command-color "#FF0000"
-  "The color of invalid command by `aweshell-validate-command'."
-  :type 'string
-  :group 'aweshell)
+(defface aweshell-invalid-command-face
+  '((t (:inherit 'error)))
+  "Face of a valid command in `aweshell-mode.'")
 
 (defface aweshell-alert-buffer-face
-  '((t (:foreground "#ff2d55" :bold t)))
+  '((t (:inherit 'error)))
   "Alert buffer face."
   :group 'aweshell)
 
 (defface aweshell-alert-command-face
-  '((t (:foreground "#ff9500" :bold t)))
+  '((t (:inherit 'warning)))
   "Alert command face."
   :group 'aweshell)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Variable ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defvar aweshell-buffer-list nil
-  "The list of non-dedicated eshell buffers.")
+(define-minor-mode aweshell-mode
+  "Aweshell."
+  :lighter ""
+  :keymap (let ((map (make-sparse-keymap)))
+            (define-key map (kbd "C-c C-l") #'aweshell-clear-buffer)
+            (define-key map (kbd "C-M-l") #'aweshell-sudo-toggle)
+            (define-key map (kbd "M-'") #'aweshell-search-history)
+            map)
+  (if aweshell-mode
+      (progn
+        (esh-autosuggest-companyless-mode)
+        (add-hook 'post-command-hook #'aweshell-validate-command t t)
+        (aweshell-sync-dir-buffer-name)
+        (add-hook 'eshell-directory-change-hook #'aweshell-sync-dir-buffer-name t t)
+        (add-hook 'eshell-kill-hook #'eshell-command-alert t t)
+        (when (featurep 'company)
+          (company-mode)
+          (setq-local company-auto-complete nil)
+          (setq-local company-idle-delay 99999999))
+        (esh-autosuggest-companyless-mode)
+        (eshell-did-you-mean-setup))
+    ))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Hook ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(add-hook 'kill-buffer-hook 'aweshell-kill-buffer-hook)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Utilise Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun aweshell-kill-buffer-hook ()
-  "Function that hook `kill-buffer-hook'."
-  (when (eq major-mode 'eshell-mode)
-    (let ((killed-buffer (current-buffer)))
-      (setq aweshell-buffer-list
-            (delq killed-buffer aweshell-buffer-list)))))
-
-(defun aweshell-get-buffer-index ()
-  (let ((eshell-buffer-index-list (aweshell-get-buffer-index-list))
-        (eshell-buffer-index-counter 1))
-    (if eshell-buffer-index-list
-        (progn
-          (dolist (buffer-index eshell-buffer-index-list)
-            (if (equal buffer-index eshell-buffer-index-counter)
-                (setq eshell-buffer-index-counter (+ 1 eshell-buffer-index-counter))
-              (return eshell-buffer-index-counter)))
-          eshell-buffer-index-counter)
-      1)))
-
-(defun aweshell-get-buffer-names ()
-  (let (eshell-buffer-names)
-    (dolist (frame (frame-list))
-      (dolist (buffer (buffer-list frame))
-        (with-current-buffer buffer
-          (if (eq major-mode 'eshell-mode)
-              (add-to-list 'eshell-buffer-names (buffer-name buffer))))))
-    eshell-buffer-names))
-
-(defun aweshell-get-buffer-index-list ()
-  (let ((eshell-buffer-names (aweshell-get-buffer-names)))
-    (if eshell-buffer-names
-        (let* ((eshell-buffer-index-strings
-                (seq-filter (function
-                             (lambda (buffer-index)
-                               (and (stringp buffer-index)
-                                    (not (equal 0 (string-to-number buffer-index))))))
-                            (mapcar (function
-                                     (lambda (buffer-name)
-                                       (if (integerp (string-match "\\*eshell\\*\<\\([0-9]+\\)\>" buffer-name))
-                                           (subseq buffer-name (match-beginning 1) (match-end 1))
-                                         nil)))
-                                    eshell-buffer-names)))
-               (eshell-buffer-index-list (sort (seq-map 'string-to-number eshell-buffer-index-strings) '<)))
-          eshell-buffer-index-list)
-      nil)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Interactive Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Commands
 
 (defun aweshell-toggle (&optional arg)
   "Toggle Aweshell.
-If called with prefix argument, open Aweshell buffer in current directory when toggling on Aweshell. If there exists an Aweshell buffer with current directory, use that, otherwise create one."
+
+If called with prefix argument ARG,
+open Aweshell buffer in current directory when toggling on Aweshell
+If there exists an Aweshell buffer with current directory, use that,
+ otherwise create one."
   (interactive "p")
   (if (equal major-mode 'eshell-mode)
       ;; toggle off
@@ -308,42 +256,37 @@ If called with prefix argument, open Aweshell buffer in current directory when t
             (switch-to-buffer (car (last (aweshell-new))))
             (eshell/cd dir)))
       ;; simply open
-      (aweshell-next))))
+      (switch-to-buffer (or (seq-find (lambda (buf) (eq (buffer-local-value 'major-mode buf) 'eshell-mode))
+                                      (buffer-list))
+                            (aweshell-new))))))
 
 (defun aweshell-new ()
   "Create new eshell buffer."
   (interactive)
-  (setq aweshell-buffer-list (nconc aweshell-buffer-list (list (eshell (aweshell-get-buffer-index))))))
+  (save-excursion
+    (eshell t)
+    (aweshell-mode)
+    (current-buffer)))
 
 (defun aweshell-next ()
   "Select next eshell buffer.
 Create new one if no eshell buffer exists."
   (interactive)
-  (if (or (not aweshell-buffer-list) (equal (length aweshell-buffer-list) 0))
-      (aweshell-new)
-    (let* ((current-buffer-index (cl-position (current-buffer) aweshell-buffer-list))
-           (switch-index (if current-buffer-index
-                             (if (>= current-buffer-index (- (length aweshell-buffer-list) 1))
-                                 0
-                               (+ 1 current-buffer-index))
-                           0)))
-      (switch-to-buffer (nth switch-index aweshell-buffer-list))
-      )))
+  (let ((bufname (buffer-name)))
+    (next-buffer)
+    (while (and (not (eq major-mode 'eshell-mode))
+                (not (string= (buffer-name) bufname)))
+      (next-buffer))))
 
 (defun aweshell-prev ()
   "Select previous eshell buffer.
 Create new one if no eshell buffer exists."
   (interactive)
-  (if (or (not aweshell-buffer-list) (equal (length aweshell-buffer-list) 0))
-      (aweshell-new)
-    (let* ((current-buffer-index (cl-position (current-buffer) aweshell-buffer-list))
-           (switch-index (if current-buffer-index
-                             (if (<= current-buffer-index 0)
-                                 (- (length aweshell-buffer-list) 1)
-                               (- current-buffer-index 1))
-                           (- (length aweshell-buffer-list) 1))))
-      (switch-to-buffer (nth switch-index aweshell-buffer-list))
-      )))
+  (let ((bufname (buffer-name)))
+    (previous-buffer)
+    (while (and (not (eq major-mode 'eshell-mode))
+                (not (string= (buffer-name) bufname)))
+      (previous-buffer))))
 
 (defun aweshell-clear-buffer ()
   "Clear eshell buffer."
@@ -382,38 +325,19 @@ Create new one if no eshell buffer exists."
   ;; move cursor to eol
   (end-of-line))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Aweshell keymap ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(add-hook 'eshell-mode-hook
-          (lambda ()
-            (define-key eshell-mode-map (kbd aweshell-clear-buffer-key) 'aweshell-clear-buffer)
-            (define-key eshell-mode-map (kbd aweshell-sudo-toggle-key) 'aweshell-sudo-toggle)
-            (define-key eshell-mode-map (kbd aweshell-search-history-key) 'aweshell-search-history)
-            ))
+;;;; Extensions
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; EShell extensions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; eshell-up.el
+;;;;; eshell-up
+;;
 ;; Quickly go to a specific parent directory in eshell
-(require 'eshell-up)
 (defalias 'eshell/up 'eshell-up)
 (defalias 'eshell/up-peek 'eshell-up-peek)
 
-;; eshell-prompt-extras
-;; Display extra information and color for your eshell prompt.
-(require 'eshell-prompt-extras)
-(with-eval-after-load "esh-opt"
-  (setq eshell-highlight-prompt nil
-        eshell-prompt-function 'epe-theme-pipeline))
+;;;;; Validate command
 
-;; esh-autosuggest
-;; Fish-like history autosuggestions in eshell
-(require 'esh-autosuggest)
-(add-hook 'eshell-mode-hook
-          (lambda ()
-            (esh-autosuggest-companyless-mode)))
-
-;; Validate command before post to eshell.
 (defun aweshell-validate-command ()
+  "Validate current command."
+  ;; overlay is slow, so we use text property here
   (save-excursion
     (beginning-of-line)
     (re-search-forward (format "%s\\([^ \t\r\n\v\f]*\\)" eshell-prompt-regexp)
@@ -425,28 +349,24 @@ Create new one if no eshell buffer exists."
       (when command
         (put-text-property
          beg end
-         'face `(:foreground
-                 ,(if
-                      (or
-                       ;; Command exists?
-                       (executable-find command)
-                       ;; Or command is an alias?
-                       (seq-contains (eshell-alias-completions "") command)
-                       ;; Or it is ../. ?
-                       (or (equal command "..")
-                           (equal command ".")
-                           (equal command "exit"))
-                       ;; Or it is a file in current dir?
-                       (member (file-name-base command) (directory-files default-directory))
-                       ;; Or it is a elisp function
-                       (functionp (intern command)))
-                      aweshell-valid-command-color
-                    aweshell-invalid-command-color)))
+         'face (if (or
+                    ;; Command exists?
+                    (executable-find command)
+                    ;; Or command is an alias?
+                    (seq-contains (eshell-alias-completions "") command)
+                    ;; Or it is ../. ?
+                    (or (equal command "..")
+                        (equal command ".")
+                        (equal command "exit"))
+                    ;; Or it is a file in current dir?
+                    (member (file-name-base command) (directory-files default-directory))
+                    ;; Or it is a elisp function
+                    (functionp (intern command)))
+                   'aweshell-valid-command-face
+                 'aweshell-invalid-command-face))
         (put-text-property beg end 'rear-nonsticky t)))))
 
-(add-hook 'eshell-mode-hook
-          (lambda ()
-            (add-hook 'post-command-hook #'aweshell-validate-command t t)))
+;;;;; Emacs
 
 (defun aweshell-emacs (&rest args)
   "Open a file in Emacs with ARGS, Some habits die hard."
@@ -461,6 +381,8 @@ Create new one if no eshell buffer exists."
     (mapc #'find-file (mapcar #'expand-file-name (eshell-flatten-list (reverse args))))))
 
 (defalias 'eshell/e 'aweshell-emacs)
+
+;;;;; Unpack
 
 (defun aweshell-unpack (file &rest args)
   "Unpack FILE with ARGS."
@@ -485,17 +407,15 @@ Create new one if no eshell buffer exists."
 
 (defalias 'eshell/unpack 'aweshell-unpack)
 
-;; Synchronal buffer name by directory change.
+;;;;; Sync buffer name with current directory
+
 (defun aweshell-sync-dir-buffer-name ()
   "Change aweshell buffer name by directory change."
-  (when (equal major-mode 'eshell-mode)
-    (rename-buffer (format "Aweshell: %s" (epe-fish-path default-directory))
-                   t)))
+  (rename-buffer (format "eshell @ %s" (epe-fish-path default-directory))
+                 t))
 
-(add-hook 'eshell-directory-change-hook #'aweshell-sync-dir-buffer-name)
-(add-hook 'eshell-mode-hook #'aweshell-sync-dir-buffer-name)
+;;;;; Completions for git command
 
-;; Add completions for git command.
 (when (executable-find "git")
   (defun pcmpl-git-commands ()
     "Return the most common git commands by parsing the git output."
@@ -546,15 +466,11 @@ Create new one if no eshell buffer exists."
       (pcomplete-here* (append (pcmpl-git-get-refs "heads")
                                (pcmpl-git-get-refs "tags"))))
      (t
-      (while (pcomplete-here (pcomplete-entries))))))
-  )
+      (while (pcomplete-here (pcomplete-entries)))))))
 
-;; eshell-did-you-mean
-;; command not found (“did you mean…” feature) in Eshell.
-(require 'eshell-did-you-mean)
-(eshell-did-you-mean-setup)
 
-;; Make cat with syntax highlight.
+;;;;; Add syntax highlight to cat
+
 (defun aweshell-cat-with-syntax-highlight (filename)
   "Like cat(1) but with syntax highlighting."
   (let ((existing-buffer (get-file-buffer filename))
@@ -572,7 +488,8 @@ Create new one if no eshell buffer exists."
 
 (advice-add 'eshell/cat :override #'aweshell-cat-with-syntax-highlight)
 
-;; Alert user when background process finished or aborted.
+;;;;; Alert user when background process finished or aborted
+
 (defun eshell-command-alert (process status)
   "Send `alert' with severity based on STATUS when PROCESS finished."
   (let* ((cmd (process-command process))
@@ -583,8 +500,6 @@ Create new one if no eshell buffer exists."
       (message "%s %s"
                (propertize (format "[Aweshell Alert] %s" (string-remove-prefix "Aweshell: " (buffer-name buffer))) 'face 'aweshell-alert-buffer-face)
                (propertize msg 'face 'aweshell-alert-command-face)))))
-
-(add-hook 'eshell-kill-hook #'eshell-command-alert)
 
 (provide 'aweshell)
 

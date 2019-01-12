@@ -253,8 +253,7 @@ history autosuggestions."
          (propertize (substring suggest (length prefix)) ; remove prefix from suggestion
                      ;; without 'cursor property, the cursor is displayed at the end of
                      ;; the overlay
-                     'cursor 0 'face 'esh-autosuggest-companyless)))
-      (define-key esh-autosuggest-companyless-mode-map (kbd aweshell-complete-selection-key) #'esh-autosuggest-complete-word))))
+                     'cursor 0 'face 'esh-autosuggest-companyless))))))
 
 (defun esh-autosuggest-companyless-mode-off-hook (&rest _)
   "Turn off, used in company hooks."
