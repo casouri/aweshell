@@ -23,12 +23,14 @@ So he wrote `aweshell.el` to extend `eshell` with these features:
 13. Make cat file with syntax highlight.
 14. Alert user when background process finished or aborted.
 15. IDE-like completion for shell commands.
+16. Borrow fish completions
+17. Robust prompt
 
 # Installation
 
-Put `aweshell.el`, `esh-autosuggest.el`, `eshell-prompt-extras.el`, `exec-path-from-shell.el` to your load-path.
-The load-path is usually ~/elisp/.
-It's set in your ~/.emacs like this:
+Put all elisp files to your load-path.
+The load-path is usually `~/elisp/`.
+It's set in your `~/.emacs` like this:
 ```emacs-lisp
 (add-to-list 'load-path (expand-file-name "~/elisp"))
 (require 'aweshell)
@@ -52,10 +54,14 @@ Bind your favorite key to functions:
 
 ## Variables
 
-Customize variables  by:
+Customize variables by
 ```emacs-lisp
 M-x customize-group RET aweshell RET
 ```
+| Variables                    | Description                               |
+|------------------------------|-------------------------------------------|
+| `aweshell-eof-before-return` | go to end of buffer before sending return |
+
 ## Customize shell prompt
 
 Aweshell uses eshell-prompt-extra to prettify shell prompt.

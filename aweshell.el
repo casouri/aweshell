@@ -56,10 +56,12 @@
 ;; 13. Make cat file with syntax highlight.
 ;; 14. Alert user when background process finished or aborted.
 ;; 15. IDE-like completion for shell commands.
+;; 16. Borrow fish completions
+;; 17. Robust prompt
 
 ;;; Installation:
 ;;
-;; Put `aweshell.el', `esh-autosuggest.el', `eshell-prompt-extras.el', `exec-path-from-shell.el' to your load-path.
+;; Put all elisp files to your load-path.
 ;; The load-path is usually ~/elisp/.
 ;; It's set in your ~/.emacs like this:
 ;; (add-to-list 'load-path (expand-file-name "~/elisp"))
@@ -79,15 +81,7 @@
 
 ;;; Customize:
 ;;
-;; `aweshell-complete-selection-key'
-;; `aweshell-clear-buffer-key'
-;; `aweshell-sudo-toggle-key'
-;; `aweshell-search-history-key'
-;;
-;; `aweshell-valid-command-color'
-;; `aweshell-invalid-command-color'
-;; `aweshell-use-exec-path-from-shell'
-;; `aweshell-autosuggest-frontend'
+;; `aweshell-eof-before-return'
 ;;
 ;; All of the above can customize by:
 ;;      M-x customize-group RET aweshell RET
@@ -98,6 +92,7 @@
 ;; 2019/01/11
 ;;      * Remove key variables, instead use `aweshell-mode-map'
 ;;      * Replace color variables with faces
+;;      * Many other changes...
 ;; 2018/12/14
 ;;      * Change option `aweshell-autosuggest-backend' to `aweshell-autosuggest-frontend' for clarity.
 ;;
