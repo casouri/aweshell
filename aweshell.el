@@ -171,6 +171,7 @@
 (require 'eshell-prompt-extras)
 (require 'esh-autosuggest)
 (require 'eshell-did-you-mean)
+(require 'fish-completion)
 
 
 ;;; Code:
@@ -220,7 +221,8 @@
           (setq-local company-auto-complete nil)
           (setq-local company-idle-delay 99999999))
         (esh-autosuggest-companyless-mode)
-        (eshell-did-you-mean-setup))
+        (eshell-did-you-mean-setup)
+        (fish-completion-mode))
     ))
 
 
