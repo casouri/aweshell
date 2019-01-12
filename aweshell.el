@@ -37,7 +37,7 @@
 
 ;;; Commentary:
 ;;
-;; Andy created `multi-term.el' and use it many years.
+;; Andy created `multi-term.el' and used it for many years.
 ;; Now he is a big fans of `eshell'.
 ;;
 ;; So he write `aweshell.el' to extension `eshell' with below features:

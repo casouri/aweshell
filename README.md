@@ -2,7 +2,7 @@ Note from casouri: This fork (master branch) is not going to follow Andy's maste
 
 # What is aweshell?
 
-Andy created `multi-term.el` and use it many years.
+Andy created `multi-term.el` and used it for many years.
 
 Now he is a big fans of `eshell`.
 
@@ -56,14 +56,6 @@ Customize variables  by:
 ```emacs-lisp
 M-x customize-group RET aweshell RET
 ```
-
-| Variable                            | Description                                                            |
-|-------------------------------------|------------------------------------------------------------------------|
-| `aweshell-complete-selection-key`   | Key used for complete selected candidate                               |
-| `aweshell-clear-buffer-key`         | Key used to clear buffer (like <kbd>C-l</kbd> in traditional terminal) |
-| `aweshell-sudo-toggle-key`          | Key used to toggle sudo                                                |
-| `aweshell-use-exec-path-from-shell` | Whether to use exec-path-from-shell to setup environment               |
-
 ## Customize shell prompt
 
 Aweshell uses eshell-prompt-extra to prettify shell prompt.
@@ -78,17 +70,6 @@ Consult [eshell-prompt-extra's README](https://github.com/kaihaosw/eshell-prompt
 
 Checkout [homepage of eshell-up](https://github.com/peterwvj/eshell-up) for more information.
 
-
-## Use company as completion tool
-I advie to disable company's auto completion in shell, because it could become annoying. Sugguested config:
-```emacs-lisp
-(add-hook
-   'eshell-mode-hook
-   (lambda ()
-     (company-mode)
-     (define-key eshll-mode-map (kbd "<tab>") #'company-complete)
-     (setq-local company-idle-delay 9999)))
-```
 
 ## Aliases
 
