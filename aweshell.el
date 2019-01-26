@@ -260,27 +260,30 @@ If there exists an Aweshell buffer with current directory, use that,
       (while (equal major-mode 'eshell-mode)
         (switch-to-prev-buffer))
     ;; toggle on
-    (if (eq arg 4)
-        ;; open in current dir
-        (let* ((dir default-directory)
-               (existing-buffer
-                (catch 'found
-                  (dolist (buffer (buffer-list))
-                    (with-current-buffer buffer
-                      (when (and (eq major-mode 'eshell-mode)
-                                 (equal dir default-directory))
-                        (throw 'found buffer)))))))
-          ;; found the buffer with the same dir
-          ;; or create a new one
-          (if existing-buffer
-              (switch-to-buffer existing-buffer)
-            (message "No Aweshell buffer with current dir found, creating a new one.")
-            (switch-to-buffer (car (last (aweshell-new))))
-            (eshell/cd dir)))
-      ;; simply open
-      (switch-to-buffer (or (seq-find (lambda (buf) (eq (buffer-local-value 'major-mode buf) 'eshell-mode))
-                                      (buffer-list))
-                            (aweshell-new))))))
+    (let ((buffer-list (aweshell-buffer-list)))
+      (cond ((or (eq arg 4) ; C-u
+                 (eq arg 16)) ; C-u C-u
+             ;; open in current dir
+             (let* ((dir default-directory)
+                    (buffer-with-same-dir
+                     (catch 'found
+                       (dolist (buffer buffer-list)
+                         (when (equal dir (buffer-local-value 'default-directory
+                                                              buffer))
+                           (throw 'found buffer))))))
+               ;; found the buffer with the same dir
+               ;; or create a new one
+               (if buffer-with-same-dir
+                   (switch-to-buffer buffer-with-same-dir)
+                 (switch-to-buffer (if (eq arg 4)
+                                       (progn (message "No valid aweshell buffer found, reuse one.")
+                                              (car buffer-list))
+                                     (message "No valid aweshell buffer found, create a new one.")
+                                     (aweshell-new)))
+                 (eshell/cd dir))))
+            ;; simply open
+            (t (switch-to-buffer (or (car buffer-list)
+                                     (aweshell-new))))))))
 
 (defun aweshell-new ()
   "Create new eshell buffer."
