@@ -244,10 +244,11 @@ If there exists an Aweshell buffer with current directory, use that,
         (let* ((dir default-directory)
                (existing-buffer
                 (catch 'found
-                  (dolist (aweshell-buffer aweshell-buffer-list)
-                    (with-current-buffer aweshell-buffer
-                      (when (equal dir default-directory)
-                        (throw 'found aweshell-buffer)))))))
+                  (dolist (buffer (buffer-list))
+                    (with-current-buffer buffer
+                      (when (and (eq major-mode 'eshell-mode)
+                                 (equal dir default-directory))
+                        (throw 'found buffer)))))))
           ;; found the buffer with the same dir
           ;; or create a new one
           (if existing-buffer
