@@ -224,6 +224,15 @@
         (fish-completion-mode)
         (advice-add #'eshell-send-input :before #'aweshell-eof-before-ret))))
 
+;;;; Helpers
+
+(defun aweshell-buffer-list ()
+  "Return a list of eshell buffers."
+  (cl-remove-if-not
+   (lambda (buf)
+     (eq (buffer-local-value 'major-mode buf)
+         'eshell-mode))
+   (buffer-list)))
 
 ;;;; Commands
 
@@ -234,18 +243,15 @@
    (list (completing-read "Choose buffer: "
                           (mapcar (lambda (buf)
                                     (buffer-name buf))
-                                  (cl-remove-if-not
-                                   (lambda (buf)
-                                     (eq (buffer-local-value 'major-mode buf)
-                                         'eshell-mode))
-                                   (buffer-list))))))
+                                  (aweshell-buffer-list)))))
   (switch-to-buffer buffer))
 
 (defun aweshell-toggle (&optional arg)
   "Toggle Aweshell.
 
-If called with prefix argument ARG,
-open Aweshell buffer in current directory when toggling on Aweshell
+ARG:
+C-u: open the aweshell buffer with the same dir of current buffer
+C-u C-u:
 If there exists an Aweshell buffer with current directory, use that,
  otherwise create one."
   (interactive "p")
