@@ -6,15 +6,10 @@
 ;; Maintainer: Yuan Fu <casouri@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-08-13 23:18:35
-;; Version: 2.8
+;; Version: 2.9
 ;; URL: https://github.com/casouri/aweshell
 ;; Keywords:
 ;; Compatibility: GNU Emacs 27.0.50
-;;
-;; Features that might be required by this library:
-;;
-;; `eshell' `eshell-prompt-extras' `esh-autosuggest' `exec-path-from-shell' `cl' `subr-x'
-;;
 
 ;;; This file is NOT part of GNU Emacs
 
