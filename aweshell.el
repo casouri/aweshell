@@ -206,6 +206,7 @@
             (define-key map (kbd "C-c C-l") #'aweshell-clear-buffer)
             (define-key map (kbd "C-M-l") #'aweshell-sudo-toggle)
             (define-key map (kbd "M-'") #'aweshell-search-history)
+            (define-key map (kbd "C-c C-b") #'aweshell-switch-buffer)
             map)
   (if aweshell-mode
       (progn
@@ -225,6 +226,20 @@
 
 
 ;;;; Commands
+
+(defun aweshell-switch-buffer (buffer)
+  "Switch to an aweshell buffer BUFFER."
+  (require 'cl-lib)
+  (interactive
+   (list (completing-read "Choose buffer: "
+                          (mapcar (lambda (buf)
+                                    (buffer-name buf))
+                                  (cl-remove-if-not
+                                   (lambda (buf)
+                                     (eq (buffer-local-value 'major-mode buf)
+                                         'eshell-mode))
+                                   (buffer-list))))))
+  (switch-to-buffer buffer))
 
 (defun aweshell-toggle (&optional arg)
   "Toggle Aweshell.
