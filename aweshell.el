@@ -249,11 +249,12 @@
 (defun aweshell-toggle (&optional arg)
   "Toggle Aweshell.
 
-ARG:
-C-u: open the aweshell buffer with the same dir of current buffer
-C-u C-u:
+ARG: C-u: open the aweshell buffer with the same dir of current buffer
 If there exists an Aweshell buffer with current directory, use that,
- otherwise create one."
+otherwise create one.
+
+C-u C-u: same as C-u, but reuse a existing aweshell buffer instead of
+creating one."
   (interactive "p")
   (if (equal major-mode 'eshell-mode)
       ;; toggle off
